@@ -1,0 +1,41 @@
+local game_state = require "main.game_state"
+
+go.property("x_pos", 0)
+go.property("y_pos", 0)
+
+local half_length = 75
+
+function init(self)
+	-- Needed for gesture support
+	msg.post(".", "acquire_input_focus")
+	-- comment below for testing
+	msg.post("#sprite", "disable")
+end
+
+local function in_y_bound(position)
+	local go_pos = go.get_position()
+	return go_pos.y - half_length <= position.y and position.y <= go_pos.y + half_length
+end
+
+local function in_x_bound(position)
+	local go_pos = go.get_position()
+	return go_pos.x - half_length <= position.x and position.x <= go_pos.x + half_length
+end
+
+local function in_bound(position)
+	return in_x_bound(position) and in_y_bound(position)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("on_gesture") then
+		if message.tap and in_bound(message.tap.position) then
+			msg.post("#sprite", "enable")
+			print("clicked on box " .. self.x_pos .. ", " .. self.y_pos)
+			local set_value = game_state.set_position(self.x_pos, self.y_pos)
+			sprite.play_flipbook(msg.url("#sprite"), set_value)
+		else
+			game_state.reset_position(self.x_pos, self.y_pos)
+			msg.post("#sprite", "disable")
+		end
+	end
+end
